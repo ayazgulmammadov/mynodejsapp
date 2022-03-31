@@ -1,0 +1,33 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "aksClusterName": {
+            "value": "aksclusterayaz001"
+        },
+        "location": {
+            "value": "West Europe"
+        },
+        "kubernetesVersion": {
+            "value": "1.21.9"
+        },
+        "enableRBAC": {
+            "value": true
+        },
+        "dnsPrefix": {
+            "value": "ayazaksproject"
+        },
+        "vmSize": {
+            "value": "Standard_B2ms"
+        },
+        "osDiskSizeGB": {
+            "value": 0
+        },
+        "workspaceName": {
+            "value": "aksmonitoringayaz"
+        },
+        "acrName": {
+            "value": "containerregistryayaz001"
+        }
+    }
+}

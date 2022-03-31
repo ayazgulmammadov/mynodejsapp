@@ -1,0 +1,155 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "aksClusterName": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "kubernetesVersion": {
+            "type": "string"
+        },
+        "enableRBAC": {
+            "type": "bool"
+        },
+        "dnsPrefix": {
+            "type": "string"
+        },
+        "vmSize": {
+            "type": "string"
+        },
+        "osDiskSizeGB": {
+            "type": "int",
+            "minValue": 0,
+            "maxValue": 1023
+        },
+        "workspaceName": {
+            "type": "string"
+        },
+        "acrName": {
+            "type": "string"
+        },
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+            }
+        },
+        "_artifactsLocationSasToken": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Auto-generated token to access _artifactsLocation"
+            }
+        }
+    },
+    "variables": {
+        "monitoringMetricsPublisherRoleId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '3913510d-42f4-4e42-8a64-420c390055eb')]",
+        "acrPullRole": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')]",
+        "aksClusterId": "[resourceId('Microsoft.ContainerService/managedClusters', parameters('aksClusterName'))]",
+        "monitoringMetricsPublisherRoleAssignmentName": "[concat('Microsoft.Authorization/', guid(concat(resourceGroup().id, 'aksmonitoring')))]",
+        "acrContributorRoleAssignmentName": "[concat('Microsoft.Authorization/', guid(concat(resourceGroup().id, 'acrcontributor')))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2021-04-01",
+            "name": "logAnalytics",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(parameters('_artifactsLocation'), 'linked/', 'monitoring.json', parameters('_artifactsLocationSasToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "workspaceName": {
+                        "value": "[parameters('workspaceName')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2021-04-01",
+            "name": "containerRegistry",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'kubernetesService')]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(parameters('_artifactsLocation'), 'linked/', 'acr.json', parameters('_artifactsLocationSasToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "acrName": {
+                        "value": "[parameters('acrName')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "acrContributorRoleAssignmentName": {
+                        "value": "[variables('acrContributorRoleAssignmentName')]"
+                    },
+                    "acrPullRole": {
+                        "value": "[variables('acrPullRole')]"
+                    },
+                    "aksClusterId": {
+                        "value": "[variables('aksClusterId')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2021-04-01",
+            "name": "kubernetesService",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'logAnalytics')]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(parameters('_artifactsLocation'), 'linked/', 'aks.json', parameters('_artifactsLocationSasToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "aksClusterName": {
+                        "value": "[parameters('aksClusterName')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "kubernetesVersion": {
+                        "value": "[parameters('kubernetesVersion')]"
+                    },
+                    "enableRBAC": {
+                        "value": "[parameters('enableRBAC')]"
+                    },
+                    "dnsPrefix": {
+                        "value": "[parameters('dnsPrefix')]"
+                    },
+                    "vmSize": {
+                        "value": "[parameters('vmSize')]"
+                    },
+                    "osDiskSizeGB": {
+                        "value": "[parameters('osDiskSizeGB')]"
+                    },
+                    "workspaceName": {
+                        "value": "[parameters('workspaceName')]"
+                    },
+                    "monitoringMetricsPublisherRoleId": {
+                        "value": "[variables('monitoringMetricsPublisherRoleId')]"
+                    },
+                    "monitoringMetricsPublisherRoleAssignmentName": {
+                        "value": "[variables('monitoringMetricsPublisherRoleAssignmentName')]"
+                    }
+                }
+            }
+        }
+    ]
+}

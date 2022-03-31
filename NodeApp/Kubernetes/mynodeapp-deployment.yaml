@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mynodeapp-deployment
+  labels:
+    app: mynodeapp
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: mynodeapp
+  template:
+    metadata:
+      labels:
+        app: mynodeapp
+    spec:
+      containers:
+      - name: mynodeapp
+        image: ayazcontainerregistry0001.azurecr.io/mynodeapp:v1
+        ports:
+        - containerPort: 8888
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mynodeapp-service
+spec:
+  selector:
+    app: mynodeapp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8888
+      nodePort: 30001
+  type: LoadBalancer

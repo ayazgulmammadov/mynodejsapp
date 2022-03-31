@@ -1,0 +1,96 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "aksClusterName": {
+            "type": "string"
+        },
+        "kubernetesVersion": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "enableRBAC": {
+            "type": "bool"
+        },
+        "dnsPrefix": {
+            "type": "string"
+        },
+        "vmSize": {
+            "type": "string"
+        },
+        "osDiskSizeGB": {
+            "type": "int"
+        },
+        "workspaceName": {
+            "type": "string"
+        },
+        "monitoringMetricsPublisherRoleId": {
+            "type": "string"
+        },
+        "monitoringMetricsPublisherRoleAssignmentName": {
+            "type": "string"
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.ContainerService/managedClusters",
+            "apiVersion": "2022-01-01",
+            "name": "[parameters('aksClusterName')]",
+            "location": "[parameters('location')]",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "kubernetesVersion": "[parameters('kubernetesVersion')]",
+                "enableRBAC": "[parameters('enableRBAC')]",
+                "dnsPrefix": "[parameters('dnsPrefix')]",
+                "agentPoolProfiles": [
+                    {
+                        "name": "agentpool",
+                        "osDiskSizeGB": "[parameters('osDiskSizeGB')]",
+                        "count": 3,
+                        "enableAutoScaling": true,
+                        "minCount": 2,
+                        "maxCount": 5,
+                        "vmSize": "[parameters('vmSize')]",
+                        "osType": "Linux",
+                        "storageProfile": "ManagedDisks",
+                        "type": "VirtualMachineScaleSets",
+                        "mode": "System",
+                        "maxPods": 110,
+                        "availabilityZones": [
+                            "1",
+                            "2",
+                            "3"
+                        ]
+                    }
+                ],
+                "addonProfiles": {
+                    "omsagent": {
+                        "config": {
+                            "logAnalyticsWorkspaceResourceID": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+                        },
+                        "enabled": true
+                    }
+                }
+            },
+            "resources": [
+                {
+                    "type": "providers/roleAssignments",
+                    "apiVersion": "2020-04-01-preview",
+                    "name": "[parameters('monitoringMetricsPublisherRoleAssignmentName')]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.ContainerService/managedClusters', parameters('aksClusterName'))]"
+                    ],
+                    "properties": {
+                        "roleDefinitionId": "[parameters('monitoringMetricsPublisherRoleId')]",
+                        "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('aksClusterName')), '2022-01-01', 'Full').properties.addonProfiles.omsAgent.identity.objectId]",
+                        "principalType": "ServicePrincipal"
+                    }
+                }
+            ]
+        }
+    ]
+}

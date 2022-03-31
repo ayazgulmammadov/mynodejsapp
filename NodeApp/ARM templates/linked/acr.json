@@ -1,0 +1,47 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "acrName": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "acrContributorRoleAssignmentName": {
+            "type": "string"
+        },
+        "acrPullRole": {
+            "type": "string"
+        },
+        "aksClusterId": {
+            "type": "string"
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.ContainerRegistry/registries",
+            "apiVersion": "2021-12-01-preview",
+            "name": "[parameters('acrName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard"
+            },
+            "resources": [
+                {
+                    "type": "providers/roleAssignments",
+                    "apiVersion": "2020-04-01-preview",
+                    "name": "[parameters('acrContributorRoleAssignmentName')]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))]"
+                    ],
+                    "properties": {
+                        "roleDefinitionId": "[parameters('acrPullRole')]",
+                        "principalId": "[reference(parameters('aksClusterId'), '2022-01-01', 'Full').properties.identityProfile.kubeletidentity.objectId]",
+                        "principalType": "ServicePrincipal"
+                    }
+                }
+            ]
+        }
+    ]
+}
