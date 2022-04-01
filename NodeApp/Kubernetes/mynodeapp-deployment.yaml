@@ -19,7 +19,7 @@ spec:
         image: containerregistryayaz001.azurecr.io/mynodejsapp
         ports:
         - containerPort: 8888
-      imagePullPolicy: Always
+        imagePullPolicy: Always
 ---
 apiVersion: v1
 kind: Service
