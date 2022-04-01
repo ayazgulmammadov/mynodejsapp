@@ -16,9 +16,10 @@ spec:
     spec:
       containers:
       - name: mynodeapp
-        image: ayazcontainerregistry0001.azurecr.io/mynodeapp:v1
+        image: containerregistryayaz001.azurecr.io/mynodejsapp
         ports:
         - containerPort: 8888
+      imagePullPolicy: Always
 ---
 apiVersion: v1
 kind: Service
